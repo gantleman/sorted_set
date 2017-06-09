@@ -120,11 +120,15 @@ private:
 
     void private_delete_node(SkipListNode *x, SkipListNode **update) 
     {
-		int i;
-		for (i = 0; i < x->clevel; i++) {
-			x->mLevel[i].mForward->mLevel[i].mSpan += x->mLevel[i].mSpan - 1;
-		}
-
+        int i;
+        for (i = 0; i < mLevel; i++) {
+            if (update[i]->mLevel[i].mForward == x) {
+                update[i]->mLevel[i].mSpan += x->mLevel[i].mSpan - 1;
+                update[i]->mLevel[i].mForward = x->mLevel[i].mForward;
+            } else {
+                update[i]->mLevel[i].mSpan -= 1;
+            }
+        }
         if (x->mLevel[0].mForward) {
             x->mLevel[0].mForward->mBackward = x->mBackward;
         } else {
@@ -138,56 +142,26 @@ private:
     /* Delete an element with matching score/key from the skiplist. */
     bool private_delete(double score, KeyType key) 
     {
-        SkipListNode *update[SKIPLIST_MAXLEVEL], *x, *f, *b;
+        SkipListNode *update[SKIPLIST_MAXLEVEL], *x;
         int i;
         x = mHeader;
         for (i = mLevel-1; i >= 0; i--) {
-            while (x->mLevel[i].mForward && x->mScore < score && x->mLevel[i].mForward->mScore <= score)
-			{
+			while (x->mLevel[i].mForward && x->mLevel[i].mForward->mScore <= score && x->mLevel[i].mForward->mKey != key)
                 x = x->mLevel[i].mForward;
-				update[i] = x->mLevel[i].mForward;
-			} 
+            update[i] = x;
         }
-
         /* We may have multiple elements with the same score, what we need
          * is to find the element with both the right score and key. */
-        //x = x->mLevel[0].mForward;
+        x = x->mLevel[0].mForward;
         if (x && score == x->mScore && x->mKey == key) {
             private_delete_node(x, update);
             delete x;
             return true;
         } 
-
-
-		if (i == -1)
-		{
-			f = x;
-			while (f->mLevel[0].mForward && f->mLevel[0].mForward->mScore <= score) {
-				f = f->mLevel[0].mForward;
-
-				if (!f->mIsHeader && f->mKey == key) {
-					private_delete_node(f, update);
-					delete f;
-					return 1;
-				}
-			}
-		}
-
-		if (i == -1)
-		{
-			b = x;
-			while (b->mBackward && b->mBackward->mScore >= score) {
-				b = b->mBackward;
-
-				if (!b->mIsHeader && b->mKey == key) {
-					private_delete_node(b, update);
-					delete b;
-					return 1;
-				}
-			}
-		}
-
-		return 0;
+        else {
+            return false; /* not found */
+        }
+        return false; /* not found */
     }
 
     static bool score_gte_min(double score, const RangeSpec &spec) {
@@ -330,50 +304,24 @@ private:
      * Note that the rank is 1-based due to the span of mHeader to the
      * first element. */
     unsigned long get_rank(double score, KeyType key) {
-        SkipListNode *x,*f,*b;
-        unsigned long rank = 0, frank = 0 ,brank = 0;
+        SkipListNode *x;
+        unsigned long rank = 0;
         int i;
 
         x = mHeader;
         for (i = mLevel-1; i >= 0; i--) {
-            while (x->mLevel[i].mForward && x->mScore < score &&  x->mLevel[i].mForward->mScore <= score) {
+			while (x->mLevel[i].mForward &&
+				(x->mLevel[i].mForward->mScore < score || 
+				(x->mLevel[i].mForward->mScore == score && x->mLevel[i].mSpan == 1))) {
                 rank += x->mLevel[i].mSpan;
                 x = x->mLevel[i].mForward;
-            }
 
-            /* x might be equal to mHeader, so test if is header */
-            if (!x->mIsHeader && x->mKey == key) {
-                return rank;
+				/* x might be equal to mHeader, so test if is header */
+				if (!x->mIsHeader && x->mKey == key) {
+					return rank;
+				}
             }
         }
-
-		if (i == -1)
-		{
-			f = x;
-			frank = rank;
-			while (f->mLevel[0].mForward && f->mLevel[0].mForward->mScore <= score) {
-				frank += f->mLevel[0].mSpan;
-				f = f->mLevel[0].mForward;
-
-				if (!f->mIsHeader && f->mKey == key) {
-					return frank;
-				}
-			}
-		}
-
-		if (i == -1)
-		{
-			b = x;
-			brank = rank;
-			while (b->mBackward && b->mBackward->mScore >= score) {
-				brank -= b->mBackward->mLevel[0].mSpan;
-				b = b->mBackward;
-
-				if (!b->mIsHeader && b->mKey == key) {
-					return brank;
-				}
-			}
-		}
         return 0;
     }
 

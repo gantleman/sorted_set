@@ -10,32 +10,41 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	for (int i = 0; i< 20; i++)
 	{
-		sortedSetview.zadd(i, rand()%100);
+		sortedSetview.zadd(i, rand()%10);
 	}
 	sortedSetview.zprint();
 
-	for (int i = 0; i< 100; i++)
+	printf("///////////////////////////\n");
+
+	for (int i = 0; i< 1; i++)
 	{
 		int r = rand()%10;
 
-		if (r%2 == 0)
+		if (r%2 == 1)
 			sortedSetview.zincrby(5, -r);
 		else
 			sortedSetview.zincrby(5, r);
 
 		sortedSetview.zprint();
+
+		unsigned long rank=0;
+
+		sortedSetview.zrank(5, rank);
+
+		printf("%d///////////////////////////\n", rank);
 	}
-
-
 
 	SortedSet<int> sortedSet;
 
-	for (int i = 0; i< 10000; i++)
+	for (int i = 0; i< 10; i++)
 	{
-		sortedSet.zadd(i, rand()%100);
+		sortedSet.zadd(i, rand()%10);
 	}
 
-	for (int i = 0; i< 100; i++)
+	sortedSet.zprint();
+	printf("///////////////////////////\n");
+
+	for (int i = 0; i< 10; i++)
 	{
 		unsigned long rank=0;
 		sortedSet.zrank(i, rank);

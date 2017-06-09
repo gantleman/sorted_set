@@ -21,6 +21,8 @@
 #include <vector>
 #include <iostream>
 #include <functional>
+#include <sstream>
+#include <string>
 
 #if defined __GNUC__
 #include <ext/hash_map>
@@ -144,7 +146,7 @@ private:
         int i;
         x = mHeader;
         for (i = mLevel-1; i >= 0; i--) {
-            while (x->mLevel[i].mForward && x->mLevel[i].mForward->mScore < score)
+			while (x->mLevel[i].mForward && x->mLevel[i].mForward->mScore <= score && x->mLevel[i].mForward->mKey != key)
                 x = x->mLevel[i].mForward;
             update[i] = x;
         }
@@ -302,50 +304,24 @@ private:
      * Note that the rank is 1-based due to the span of mHeader to the
      * first element. */
     unsigned long get_rank(double score, KeyType key) {
-        SkipListNode *x,*f,*b;
-        unsigned long rank = 0, frank = 0 ,brank = 0;
+        SkipListNode *x;
+        unsigned long rank = 0;
         int i;
 
         x = mHeader;
         for (i = mLevel-1; i >= 0; i--) {
-            while (x->mLevel[i].mForward && x->mLevel[i].mForward->mScore <= score) {
+			while (x->mLevel[i].mForward &&
+				(x->mLevel[i].mForward->mScore < score || 
+				(x->mLevel[i].mForward->mScore == score && x->mLevel[i].mSpan == 1))) {
                 rank += x->mLevel[i].mSpan;
                 x = x->mLevel[i].mForward;
-            }
 
-            /* x might be equal to mHeader, so test if is header */
-            if (!x->mIsHeader && x->mKey == key) {
-                return rank;
+				/* x might be equal to mHeader, so test if is header */
+				if (!x->mIsHeader && x->mKey == key) {
+					return rank;
+				}
             }
         }
-
-		if (i == -1)
-		{
-			f = x;
-			frank = rank;
-			while (f->mLevel[0].mForward && f->mLevel[0].mForward->mScore <= score) {
-				frank += f->mLevel[0].mSpan;
-				f = f->mLevel[0].mForward;
-
-				if (!f->mIsHeader && f->mKey == key) {
-					return frank;
-				}
-			}
-		}
-
-		if (i == -1)
-		{
-			b = x;
-			brank = rank;
-			while (b->mBackward && b->mBackward->mScore >= score) {
-				brank -= b->mBackward->mLevel[0].mSpan;
-				b = b->mBackward;
-
-				if (!b->mIsHeader && b->mKey == key) {
-					return brank;
-				}
-			}
-		}
         return 0;
     }
 
@@ -670,6 +646,36 @@ public:
         return zrank_generic(key, true, rank);
     }
 
+	void zprint()
+	{
+		SkipListNode * x = mHeader->mLevel[0].mForward;
+		for (unsigned long i=0; i< mLength; i++ )
+		{
+			std::stringstream out;
+			out.fill('0');
+			out.width(2);
+			out << i;
+
+			out << "key:";
+			out.fill('0');
+			out.width(2);
+			out <<  x->mKey;
+			out << "score:";
+			out.fill('0');
+			out.width(2);
+			out << x->mScore;
+			out << "Span:";
+
+			for (int j=0; j < x->clevel; j++)
+			{
+				out << x->mLevel[j].mSpan << ",";
+			}
+
+			printf("%s\n",out.str().c_str());
+
+			x = x->mLevel[0].mForward;
+		}
+	}
 public:
     SortedSet():mTail(NULL), mLength(0), mLevel(1), mDict()
     {
@@ -692,11 +698,13 @@ private:
     public:
         SkipListNode(int level): mIsHeader(true), mScore(0), mBackward(NULL)
         {
+			clevel = level;
             mLevel = new SkipListLevel[level];
         }
 
         SkipListNode(int level, double score, KeyType key): mIsHeader(false), mScore(score), mKey(key), mBackward(NULL)
         {
+			clevel = level;
             mLevel = new SkipListLevel[level];
         }
 
@@ -714,6 +722,7 @@ private:
         KeyType mKey;
         SkipListNode *mBackward;
         SkipListLevel *mLevel;
+		int clevel;
     };
 
     class SkipListLevel {

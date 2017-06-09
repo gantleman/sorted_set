@@ -23,25 +23,15 @@
 #include <functional>
 
 #if defined __GNUC__
-#   if  __GNUC__ >= 4 && __GNUC_MINOR__ >= 3
-#       include <unordered_map>
-#       include <unordered_set>
-#       define HASHSCOPE std
-#   else
-#       include <tr1/unordered_map>
-#       include <tr1/unordered_set>
-#       define HASHSCOPE std::tr1
-#   endif
+#include <ext/hash_map>
 #else
-#   error not GNU C Compiler
+#include <hash_map> 
 #endif
 
-template< typename KeyType,
-          typename HashFn = HASHSCOPE::hash<KeyType>,
-          typename EqualKey = std::equal_to<KeyType> >
+template< typename KeyType >
 class SortedSet {
 private:
-    typedef typename HASHSCOPE::unordered_map<KeyType, double, HashFn, EqualKey> DictType;
+    typedef typename std::hash_map<KeyType, double> DictType;
     typedef typename DictType::iterator DictTypeIterator;
     typedef typename DictType::const_iterator DictTypeConstIterator;
     typedef typename std::vector<KeyType> KeyVecType;
@@ -66,7 +56,7 @@ private:
     int randomlevel() 
     {
         int level = 1;
-        while ((random()&0xFFFF) < (0.25/*SKIPLIST_P*/ * 0xFFFF))
+        while ((rand()&0xFFFF) < (0.25/*SKIPLIST_P*/ * 0xFFFF))
             level += 1;
         return (level<SKIPLIST_MAXLEVEL) ? level : SKIPLIST_MAXLEVEL;
     }
@@ -312,8 +302,8 @@ private:
      * Note that the rank is 1-based due to the span of mHeader to the
      * first element. */
     unsigned long get_rank(double score, KeyType key) {
-        SkipListNode *x;
-        unsigned long rank = 0;
+        SkipListNode *x,*f,*b;
+        unsigned long rank = 0, frank = 0 ,brank = 0;
         int i;
 
         x = mHeader;
@@ -324,10 +314,38 @@ private:
             }
 
             /* x might be equal to mHeader, so test if is header */
-            if (not x->mIsHeader && x->mKey == key) {
+            if (!x->mIsHeader && x->mKey == key) {
                 return rank;
             }
         }
+
+		if (i == -1)
+		{
+			f = x;
+			frank = rank;
+			while (f->mLevel[0].mForward && f->mLevel[0].mForward->mScore <= score) {
+				frank += f->mLevel[0].mSpan;
+				f = f->mLevel[0].mForward;
+
+				if (!f->mIsHeader && f->mKey == key) {
+					return frank;
+				}
+			}
+		}
+
+		if (i == -1)
+		{
+			b = x;
+			brank = rank;
+			while (b->mBackward && b->mBackward->mScore >= score) {
+				brank -= b->mBackward->mLevel[0].mSpan;
+				b = b->mBackward;
+
+				if (!b->mIsHeader && b->mKey == key) {
+					return brank;
+				}
+			}
+		}
         return 0;
     }
 

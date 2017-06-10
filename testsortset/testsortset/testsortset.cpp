@@ -16,7 +16,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	printf("///////////////////////////\n");
 
-	for (int i = 0; i< 1; i++)
+	for (int i = 0; i< 10; i++)
 	{
 		int r = rand()%10;
 
@@ -51,27 +51,29 @@ int _tmain(int argc, _TCHAR* argv[])
 		printf( "name %d rank %d\n",i, rank);
 	}
 
+	printf("///////////////////////////\n");
+
+	SortedSet<int> sortedSetspeed;
+	for (int i = 0; i < 10000; i++)
+	{
+		sortedSetspeed.zadd(i, rand() % 100);
+	}
+
 	clock_t start = clock();
 	for (int i = 0; i< 10000; i++)
 	{
 		int r = rand()%10;
-
 		if (r%2 == 0)
-			sortedSet.zincrby(5, -r);
+			sortedSetspeed.zincrby(50, -r);
 		else
-			sortedSet.zincrby(5, r);
-		
-		unsigned long rank=0;
-		sortedSet.zrank(5, rank);
-
-		printf( "rank %d\n", rank);
+			sortedSetspeed.zincrby(50, r);
 	}
 	clock_t finish = clock();
 
 	double duration = (double)(finish - start) / CLOCKS_PER_SEC;
 
 	unsigned long rank;
-	sortedSet.zrank(5, rank);
+	sortedSetspeed.zrank(50, rank);
 
 	printf( "%f seconds, %d\n", duration, rank);
 

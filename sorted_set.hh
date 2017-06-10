@@ -73,7 +73,9 @@ private:
         for (i = mLevel-1; i >= 0; i--) {
             /* store rank that is crossed to reach the insert position */
             rank[i] = i == (mLevel-1) ? 0 : rank[i+1];
-            while (x->mLevel[i].mForward && x->mLevel[i].mForward->mScore < score) {
+            while (x->mLevel[i].mForward && 
+				(x->mLevel[i].mForward->mScore < score || 
+				(x->mLevel[i].mForward->mScore == score && x->mLevel[i].mForward->mKey < key))) {
                 rank[i] += x->mLevel[i].mSpan;
                 x = x->mLevel[i].mForward;
             }
@@ -145,11 +147,15 @@ private:
         SkipListNode *update[SKIPLIST_MAXLEVEL], *x;
         int i;
         x = mHeader;
-        for (i = mLevel-1; i >= 0; i--) {
-			while (x->mLevel[i].mForward && x->mLevel[i].mForward->mScore <= score && x->mLevel[i].mForward->mKey != key)
-                x = x->mLevel[i].mForward;
-            update[i] = x;
-        }
+		for (i = mLevel - 1; i >= 0; i--) {
+			while(x->mLevel[i].mForward &&
+				(x->mLevel[i].mForward->mScore < score ||
+				(x->mLevel[i].mForward->mScore == score && x->mLevel[i].mForward->mKey < key))) 
+			{
+				x = x->mLevel[i].mForward;
+			}
+			update[i] = x;
+		}
         /* We may have multiple elements with the same score, what we need
          * is to find the element with both the right score and key. */
         x = x->mLevel[0].mForward;
@@ -312,14 +318,15 @@ private:
         for (i = mLevel-1; i >= 0; i--) {
 			while (x->mLevel[i].mForward &&
 				(x->mLevel[i].mForward->mScore < score || 
-				(x->mLevel[i].mForward->mScore == score && x->mLevel[i].mSpan == 1))) {
-                rank += x->mLevel[i].mSpan;
-                x = x->mLevel[i].mForward;
+				(x->mLevel[i].mForward->mScore == score && x->mLevel[i].mForward->mKey <= key)))
+			{
+				rank += x->mLevel[i].mSpan;
+				x = x->mLevel[i].mForward;
+			}
 
-				/* x might be equal to mHeader, so test if is header */
-				if (!x->mIsHeader && x->mKey == key) {
-					return rank;
-				}
+			/* x might be equal to mHeader, so test if is header */
+			if (!x->mIsHeader && x->mKey == key) {
+				return rank;
             }
         }
         return 0;

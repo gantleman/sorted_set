@@ -53,29 +53,43 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	printf("///////////////////////////\n");
 
+	clock_t start = clock();
 	SortedSet<int> sortedSetspeed;
 	for (int i = 0; i < 10000; i++)
 	{
 		sortedSetspeed.zadd(i, rand() % 100);
 	}
+	clock_t finish = clock();
 
-	clock_t start = clock();
+	double duration = (double)(finish - start) / CLOCKS_PER_SEC;
+
+	printf( "add %f seconds\n", duration);
+
+	start = clock();
 	for (int i = 0; i< 10000; i++)
 	{
-		int r = rand()%10;
+		int r = rand()%100;
+
 		if (r%2 == 0)
 			sortedSetspeed.zincrby(50, -r);
 		else
 			sortedSetspeed.zincrby(50, r);
-	}
-	clock_t finish = clock();
 
-	double duration = (double)(finish - start) / CLOCKS_PER_SEC;
+		if (r%2 == 0)
+			sortedSetspeed.zincrby(50, r);
+		else
+			sortedSetspeed.zincrby(50, -r);
+	}
+	finish = clock();
+
+	duration = (double)(finish - start) / CLOCKS_PER_SEC;
 
 	unsigned long rank;
 	sortedSetspeed.zrank(50, rank);
 
 	printf( "%f seconds, %d\n", duration, rank);
+
+	//sortedSetspeed.zprint();
 
 	system("pause");
 	return 0;

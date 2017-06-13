@@ -663,15 +663,14 @@ public:
 			out.width(2);
 			out << i;
 
-			out << "key:";
-			out.fill('0');
-			out.width(2);
+			out << " key:";
+			out.fill('.');
+			out.width(10);
 			out <<  x->mKey;
-			out << "score:";
-			out.fill('0');
-			out.width(2);
+			out << " score:";
+			out.width(10);
 			out << x->mScore;
-			out << "Span:";
+			out << " Span:";
 
 			for (int j=0; j < x->clevel; j++)
 			{
@@ -686,6 +685,7 @@ public:
 public:
     SortedSet():mTail(NULL), mLength(0), mLevel(1), mDict()
     {
+		srand((int)time(0));
         mHeader = new SkipListNode(SKIPLIST_MAXLEVEL);
     }
 

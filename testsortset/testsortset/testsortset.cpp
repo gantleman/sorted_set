@@ -4,6 +4,25 @@
 #include "stdafx.h"
 #include "sorted_set.h"
 
+void rand_str(std::string &out,const int len)
+{	int i;
+	for(i=0;i<len;++i)
+	{
+		switch((rand()%3))
+		{
+		case 1:
+			out += 'A'+rand()%26;
+			break;
+		case 2:
+			out += 'a'+rand()%26;
+			break;
+		default:
+			out += '0'+rand()%10;
+			break;
+		}
+	}
+}
+
 int _tmain(int argc, _TCHAR* argv[])
 {
 	SortedSet<int> sortedSetview;
@@ -90,6 +109,19 @@ int _tmain(int argc, _TCHAR* argv[])
 	printf( "%f seconds, %d\n", duration, rank);
 
 	//sortedSetspeed.zprint();
+
+	srand((int)time(NULL));
+
+	SortedSet<std::string> sortedstr;
+	for (int i = 0; i< 20; i++)
+	{
+		std::string key;
+
+		rand_str(key, 5);
+		sortedstr.zadd(key, rand()%10);
+	}
+	sortedstr.zprint();
+
 
 	system("pause");
 	return 0;
